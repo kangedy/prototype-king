@@ -20,18 +20,17 @@
 
 ```
 prototype-king/
-├── WORKFLOW.md                    ← 8 Phase 工作流
+├── SKILL.md                          ← Codex/Hermes skill 安装入口
+├── WORKFLOW.md                       ← 8 Phase 工作流
 ├── references/
-│   ├── design-system-tokens.md    ← 6大设计体系Token对照
-│   └── ant-design-5-tokens.md     ← Ant Design 5.x 完整Token
+│   ├── design-system-tokens.md       ← 6大设计体系Token对照
+│   └── ant-design-5-tokens.md        ← Ant Design 5.x 完整Token
 ├── scripts/
-│   └── verify-prototype.py        ← 自动化验收脚本（≥90%门禁）
+│   └── verify-prototype.py           ← 自动化验收脚本（≥90%门禁）
 ├── README.md
 ├── LICENSE
 └── CHANGELOG.md
 ```
-
----
 
 ## 🚀 快速开始
 
@@ -39,7 +38,21 @@ prototype-king/
 
 你已经有一份符合 **10章原型导向PRD标准** 的文档（参见 [prd-king](https://github.com/kangedy/prd-king)）。
 
-### 执行
+### 安装为技能（Codex / Hermes Agent）
+
+```bash
+# Codex 用户
+codex skills install kangedy/prototype-king
+
+# Hermes Agent 用户
+mkdir -p ~/.hermes/skills/product/prototype-king/
+cp -r * ~/.hermes/skills/product/prototype-king/
+# → 说「根据PRD做原型」
+```
+
+### 手动执行
+
+先确认你已经有一份符合10章PRD标准的文档，然后：
 
 ```bash
 # 1. 创建工作目录
