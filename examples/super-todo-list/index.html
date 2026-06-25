@@ -1,0 +1,547 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>超靠谱清单 · 原型</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:-apple-system,'PingFang SC','Microsoft YaHei',sans-serif;
+     background:#F5F7FA;color:#1D1D1F;height:100vh;display:flex;overflow:hidden}
+
+/* Sidebar ========== */
+.sidebar{width:56px;background:#001529;display:flex;flex-direction:column;align-items:center;padding:16px 0;gap:8px;flex-shrink:0}
+.sidebar .icon-btn{width:36px;height:36px;border:none;border-radius:8px;background:transparent;color:rgba(255,255,255,0.5);
+  font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all 0.2s}
+.sidebar .icon-btn:hover,.sidebar .icon-btn.active{background:rgba(22,119,255,0.3);color:#fff}
+
+/* Left Panel ========== */
+.left-panel{width:360px;background:#fff;border-right:1px solid #E5E6EB;display:flex;flex-direction:column;flex-shrink:0}
+.header{padding:20px 20px 12px;display:flex;justify-content:space-between;align-items:center}
+.header h1{font-size:18px;font-weight:700}
+.header .count{font-size:13px;color:#8C8C8C}
+.tabs{display:flex;padding:0 20px;gap:2px;margin-bottom:12px}
+.tab{padding:6px 14px;font-size:13px;border:none;border-radius:12px;background:transparent;color:#595959;cursor:pointer;transition:all 0.2s}
+.tab:hover{background:#F0F0F0}
+.tab.active{background:#E6F4FF;color:#1677FF;font-weight:500}
+
+/* Todo List ========== */
+.todo-list{flex:1;overflow-y:auto;padding:0 12px}
+.todo-item{display:flex;align-items:flex-start;gap:10px;padding:12px;border-radius:8px;cursor:pointer;transition:all 0.2s;border:1.5px solid transparent}
+.todo-item:hover{background:#FAFAFA}
+.todo-item.selected{background:#F0F5FF;border-color:#1677FF}
+.todo-item.done .todo-title{text-decoration:line-through;color:#BFBFBF}
+.todo-check{width:18px;height:18px;border:2px solid #D9D9D9;border-radius:50%;flex-shrink:0;margin-top:2px;
+  cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all 0.2s;background:#fff;appearance:none}
+.todo-check:checked{background:#52C41A;border-color:#52C41A}
+.todo-check:checked::after{content:'✓';color:#fff;font-size:11px;font-weight:700}
+.todo-content{flex:1;min-width:0}
+.todo-title{font-size:14px;font-weight:500;margin-bottom:2px;transition:all 0.3s}
+.todo-meta{font-size:12px;color:#8C8C8C;display:flex;gap:8px;align-items:center}
+.badge{font-size:11px;padding:1px 8px;border-radius:8px;font-weight:500}
+.badge-high{background:#FFF1F0;color:#FF4D4F}
+.badge-medium{background:#FFF7E6;color:#FA8C16}
+.badge-low{background:#F5F5F5;color:#8C8C8C}
+.star{font-size:16px;cursor:pointer;color:#D9D9D9;transition:all 0.2s;flex-shrink:0;margin-top:1px;background:none;border:none}
+.star.active{color:#FAAD14}
+.delete-btn{font-size:14px;cursor:pointer;color:#D9D9D9;flex-shrink:0;margin-top:2px;background:none;border:none;opacity:0;transition:opacity 0.2s}
+.todo-item:hover .delete-btn{opacity:1}
+.delete-btn:hover{color:#FF4D4F}
+
+/* Right Panel ========== */
+.right-panel{flex:1;display:flex;flex-direction:column;background:#fff}
+.empty-state{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;color:#BFBFBF;gap:8px}
+.empty-state .icon{font-size:48px}
+.empty-state p{font-size:14px}
+
+/* Detail View ========== */
+.detail-view{display:none;flex-direction:column;flex:1}
+.detail-header{padding:24px 24px 16px;display:flex;justify-content:space-between;align-items:flex-start}
+.detail-header h2{font-size:18px;font-weight:600;flex:1;margin-right:12px;word-break:break-word}
+.detail-actions{display:flex;gap:6px}
+.detail-body{padding:0 24px;flex:1;overflow-y:auto}
+.detail-row{display:flex;gap:16px;padding:12px 0;border-bottom:1px solid #F5F5F5}
+.detail-row:last-child{border-bottom:none}
+.detail-label{width:72px;font-size:13px;color:#8C8C8C;flex-shrink:0}
+.detail-value{flex:1;font-size:14px;color:#1D1D1F}
+.detail-value textarea{width:100%;min-height:80px;padding:8px 12px;border:1px solid #E5E6EB;border-radius:6px;font-size:14px;font-family:inherit;resize:vertical;outline:none}
+.detail-value textarea:focus{border-color:#1677FF}
+.detail-value input[type="text"],.detail-value select{width:100%;padding:6px 12px;border:1px solid #E5E6EB;border-radius:6px;font-size:14px;outline:none}
+.detail-value input[type="text"]:focus,.detail-value select:focus{border-color:#1677FF}
+
+/* Chat ========== */
+.chat-panel{display:none;flex-direction:column;flex:1;border-left:1px solid #E5E6EB}
+.chat-header{padding:16px 20px;border-bottom:1px solid #E5E6EB;display:flex;justify-content:space-between;align-items:center}
+.chat-header h3{font-size:15px;font-weight:600}
+.chat-messages{flex:1;overflow-y:auto;padding:16px 20px;display:flex;flex-direction:column;gap:12px}
+.chat-msg{max-width:85%;padding:10px 14px;border-radius:10px;font-size:14px;line-height:1.6;animation:fadeIn 0.3s}
+.chat-msg.user{align-self:flex-end;background:#1677FF;color:#fff;border-bottom-right-radius:4px}
+.chat-msg.assistant{align-self:flex-start;background:#F5F5F5;color:#333;border-bottom-left-radius:4px}
+.chat-msg.system{align-self:center;background:#FFF7E6;color:#D46B08;font-size:13px;border-radius:6px}
+.chat-msg .msg-meta{font-size:11px;opacity:0.6;margin-top:4px}
+.chat-msg.user .msg-meta{text-align:right}
+.chat-input-area{display:flex;gap:8px;padding:12px 20px;border-top:1px solid #E5E6EB}
+.chat-input-area input{flex:1;padding:8px 14px;border:1px solid #E5E6EB;border-radius:20px;font-size:14px;outline:none;transition:border 0.2s}
+.chat-input-area input:focus{border-color:#1677FF}
+.chat-input-area button{width:36px;height:36px;border:none;border-radius:50%;background:#1677FF;color:#fff;
+  font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:background 0.2s}
+.chat-input-area button:hover{background:#4096FF}
+.chat-input-area button:disabled{background:#D9D9D9;cursor:not-allowed}
+
+/* Modal ========== */
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.45);z-index:1000;display:flex;align-items:center;justify-content:center}
+.modal{background:#fff;border-radius:8px;width:400px;max-width:90vw;padding:24px;box-shadow:0 6px 30px rgba(0,0,0,0.12)}
+.modal h3{font-size:16px;font-weight:600;margin-bottom:16px}
+.modal-actions{display:flex;justify-content:flex-end;gap:8px;margin-top:20px}
+.btn{padding:7px 16px;border:none;border-radius:6px;font-size:14px;cursor:pointer;transition:all 0.2s}
+.btn-primary{background:#1677FF;color:#fff}
+.btn-primary:hover{background:#4096FF}
+.btn-danger{background:#FF4D4F;color:#fff}
+.btn-outline{background:#fff;color:#333;border:1px solid #D9D9D9}
+.btn-outline:hover{border-color:#1677FF;color:#1677FF}
+
+/* Toast ========== */
+.toast-container{position:fixed;top:20px;right:20px;z-index:9999;display:flex;flex-direction:column;gap:8px}
+.toast{padding:10px 18px;border-radius:6px;font-size:14px;box-shadow:0 4px 12px rgba(0,0,0,0.1);
+       animation:slideIn 0.3s ease;display:flex;align-items:center;gap:8px}
+.toast-success{background:#F6FFED;color:#389E0D;border:1px solid #B7EB8F}
+.toast-error{background:#FFF1F0;color:#CF1322;border:1px solid #FFA39E}
+.toast-info{background:#E6F4FF;color:#1677FF;border:1px solid #91CAFF}
+@keyframes slideIn{from{transform:translateX(100%);opacity:0}to{transform:translateX(0);opacity:1}}
+@keyframes fadeIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+@keyframes strike{from{width:0}to{width:100%}}
+
+.hidden{display:none!important}
+</style>
+</head>
+<body>
+
+<!-- Sidebar -->
+<div class="sidebar">
+  <button class="icon-btn active" onclick="switchView('list')" title="清单">📋</button>
+  <button class="icon-btn" onclick="switchView('chat')" title="AI对话">💬</button>
+</div>
+
+<!-- Left Panel -->
+<div class="left-panel">
+  <div class="header">
+    <h1>📋 超靠谱清单</h1>
+    <span class="count" id="todo-count">0 项</span>
+  </div>
+  <div class="tabs" id="tab-bar">
+    <button class="tab active" data-filter="all" onclick="switchFilter('all',this)">全部</button>
+    <button class="tab" data-filter="today" onclick="switchFilter('today',this)">📅 今日</button>
+    <button class="tab" data-filter="important" onclick="switchFilter('important',this)">⭐ 重要</button>
+    <button class="tab" data-filter="done" onclick="switchFilter('done',this)">✅ 已完成</button>
+  </div>
+  <div class="todo-list" id="todo-list"></div>
+</div>
+
+<!-- Right Panel -->
+<div class="right-panel">
+  <!-- 空态 -->
+  <div class="empty-state" id="empty-state">
+    <div class="icon">📝</div>
+    <p id="empty-msg">点击事项查看详情，或在AI对话中添加</p>
+  </div>
+
+  <!-- 详情视图 -->
+  <div class="detail-view" id="detail-view">
+    <div class="detail-header">
+      <h2 id="detail-title">事项标题</h2>
+      <div class="detail-actions">
+        <button class="btn btn-danger btn-sm" onclick="confirmDelete()" style="padding:4px 12px;font-size:12px">🗑️ 删除</button>
+      </div>
+    </div>
+    <div class="detail-body">
+      <div class="detail-row">
+        <div class="detail-label">状态</div>
+        <div class="detail-value"><input type="checkbox" id="detail-done" onchange="updateDetailField('done',this.checked)">
+          <label for="detail-done" id="detail-done-label" style="font-size:14px;margin-left:6px">未完成</label>
+        </div>
+      </div>
+      <div class="detail-row">
+        <div class="detail-label">时间</div>
+        <div class="detail-value"><input type="text" id="detail-time" onchange="updateDetailField('time',this.value)" placeholder="如: 2026-06-25 18:00"></div>
+      </div>
+      <div class="detail-row">
+        <div class="detail-label">优先级</div>
+        <div class="detail-value">
+          <select id="detail-priority" onchange="updateDetailField('priority',this.value)">
+            <option value="low">低</option>
+            <option value="medium" selected>中</option>
+            <option value="high">高</option>
+          </select>
+        </div>
+      </div>
+      <div class="detail-row">
+        <div class="detail-label">重要性</div>
+        <div class="detail-value">
+          <button id="detail-star" onclick="toggleDetailStar()" style="font-size:20px;background:none;border:none;cursor:pointer">⭐</button>
+          <span id="detail-star-label" style="font-size:14px;color:#8C8C8C">不重要</span>
+        </div>
+      </div>
+      <div class="detail-row">
+        <div class="detail-label">备注</div>
+        <div class="detail-value"><textarea id="detail-note" onchange="updateDetailField('note',this.value)" placeholder="添加备注..."></textarea></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- AI对话 -->
+  <div class="chat-panel" id="chat-panel">
+    <div class="chat-header">
+      <h3>💬 AI助手</h3>
+      <button class="btn btn-outline" onclick="clearChat()" style="padding:4px 10px;font-size:12px">清空</button>
+    </div>
+    <div class="chat-messages" id="chat-messages">
+      <div class="chat-msg assistant">你好！我是你的待办助手。告诉我你想做什么，比如：<br><br>
+        • 「明天下午3点开会，重要」<br>
+        • 「把买咖啡改成明天上午」<br>
+        • 「删除第一个待办」<br>
+        • 「今天有什么安排」</div>
+    </div>
+    <div class="chat-input-area">
+      <input id="chat-input" placeholder="输入你想做的事情..." onkeydown="if(event.key==='Enter')sendMessage()">
+      <button id="chat-send" onclick="sendMessage()">➤</button>
+    </div>
+  </div>
+</div>
+
+<!-- 删除确认弹窗 -->
+<div id="delete-modal" class="modal-overlay hidden" onclick="if(event.target===this)closeDeleteModal()">
+  <div class="modal">
+    <h3>🗑️ 确认删除</h3>
+    <p style="font-size:14px;color:#595959">确定要删除「<span id="delete-title"></span>」吗？此操作不可撤销。</p>
+    <div class="modal-actions">
+      <button class="btn btn-outline" onclick="closeDeleteModal()">取消</button>
+      <button class="btn btn-danger" onclick="doDelete()">确认删除</button>
+    </div>
+  </div>
+</div>
+
+<!-- Toast -->
+<div class="toast-container" id="toast-container"></div>
+
+<script>
+// ========== Data ==========
+var TODOS = [
+  { id:"t1", title:"完成PRD文档编写", time:"2026-06-25 18:00", priority:"high", importance:true, done:false, note:"使用prd-king标准", created_at:"2026-06-24 10:00" },
+  { id:"t2", title:"给甲方发周报", time:"2026-06-26 10:00", priority:"medium", importance:true, done:false, note:"包含本周进展和下周计划", created_at:"2026-06-24 09:00" },
+  { id:"t3", title:"采购办公用品", time:"2026-06-27", priority:"low", importance:false, done:false, note:"笔记本、签字笔", created_at:"2026-06-23 14:00" },
+  { id:"t4", title:"团队周会", time:"2026-06-25 14:00", priority:"medium", importance:true, done:true, note:"", created_at:"2026-06-22 16:00" },
+  { id:"t5", title:"服务器续费", time:"2026-07-01", priority:"high", importance:true, done:false, note:"阿里云ECS续费一年", created_at:"2026-06-21 08:00" },
+  { id:"t6", title:"准备演示Demo", time:"2026-06-28 15:00", priority:"high", importance:false, done:false, note:"超靠谱清单原型演示", created_at:"2026-06-25 12:00" },
+];
+var currentFilter = 'all';
+var selectedId = null;
+var chatHistory = [];
+var nextId = 100;
+
+// ========== Storage ==========
+function saveTodos() { localStorage.setItem('todo_data', JSON.stringify(TODOS)); }
+function loadTodos() {
+  var d = localStorage.getItem('todo_data');
+  if (d) { try { TODOS = JSON.parse(d); } catch(e){} }
+}
+loadTodos();
+
+// ========== Render ==========
+function render() {
+  renderList();
+  renderCount();
+  if (selectedId) renderDetail();
+}
+
+function getFiltered() {
+  var today = new Date().toISOString().slice(0,10);
+  return TODOS.filter(function(t) {
+    if (currentFilter === 'today') return t.time && t.time.slice(0,10) === today && !t.done;
+    if (currentFilter === 'important') return t.importance && !t.done;
+    if (currentFilter === 'done') return t.done;
+    return true;
+  });
+}
+
+function renderList() {
+  var el = document.getElementById('todo-list');
+  var list = getFiltered();
+  if (list.length === 0) {
+    var msgs = {all:'暂无待办，在AI对话中添加吧',today:'今日无待办，休息一下！',important:'暂无重要事项',done:'还没有完成的事项'};
+    el.innerHTML = '<div class="empty-state" style="padding:60px 20px"><div class="icon">📭</div><p>'+(msgs[currentFilter]||'暂无待办')+'</p></div>';
+    return;
+  }
+  el.innerHTML = list.map(function(t) {
+    var cls = 'todo-item' + (t.done?' done':'') + (t.id===selectedId?' selected':'');
+    var pCls = 'badge badge-' + t.priority;
+    var pLabel = {high:'高',medium:'中',low:'低'}[t.priority];
+    return '<div class="'+cls+'" onclick="selectTodo(\''+t.id+'\')">' +
+      '<input type="checkbox" class="todo-check"'+(t.done?' checked':'')+' onclick="event.stopPropagation();toggleDone(\''+t.id+'\')">' +
+      '<div class="todo-content">' +
+        '<div class="todo-title">'+(t.importance?'⭐ ':'')+escHtml(t.title)+'</div>' +
+        '<div class="todo-meta">' +
+          (t.time?'<span>📅 '+t.time+'</span>':'') +
+          '<span class="'+pCls+'">'+pLabel+'</span>' +
+        '</div>' +
+      '</div>' +
+      '<button class="star'+(t.importance?' active':'')+'" onclick="event.stopPropagation();toggleStar(\''+t.id+'\')">★</button>' +
+      '<button class="delete-btn" onclick="event.stopPropagation();promptDelete(\''+t.id+'\')">✕</button>' +
+    '</div>';
+  }).join('');
+}
+
+function renderCount() {
+  var total = TODOS.filter(function(t){return !t.done}).length;
+  document.getElementById('todo-count').textContent = total + ' 项待办';
+}
+
+function renderDetail() {
+  var t = TODOS.find(function(x){return x.id===selectedId});
+  if (!t) { document.getElementById('detail-view').style.display='none'; document.getElementById('empty-state').style.display='flex'; return; }
+  document.getElementById('empty-state').style.display='none';
+  document.getElementById('detail-view').style.display='flex';
+  document.getElementById('detail-title').textContent = escHtml(t.title);
+  document.getElementById('detail-done').checked = t.done;
+  document.getElementById('detail-done-label').textContent = t.done?'已完成':'未完成';
+  document.getElementById('detail-time').value = t.time||'';
+  document.getElementById('detail-priority').value = t.priority;
+  document.getElementById('detail-star').textContent = t.importance?'🌟':'⭐';
+  document.getElementById('detail-star-label').textContent = t.importance?'重要':'不重要';
+  document.getElementById('detail-note').value = t.note||'';
+}
+
+function selectTodo(id) {
+  selectedId = id;
+  render();
+  switchView('list');
+}
+
+// ========== Actions ==========
+function toggleDone(id) {
+  var t = TODOS.find(function(x){return x.id===id});
+  if (t) { t.done = !t.done; saveTodos(); render(); showToast('success',t.done?'✅ 已完成':'↩️ 已恢复',escHtml(t.title)); }
+}
+function toggleStar(id) {
+  var t = TODOS.find(function(x){return x.id===id});
+  if (t) { t.importance = !t.importance; saveTodos(); render(); }
+}
+function toggleDetailStar() {
+  var t = TODOS.find(function(x){return x.id===selectedId});
+  if (t) { t.importance = !t.importance; saveTodos(); render(); }
+}
+function updateDetailField(field, val) {
+  var t = TODOS.find(function(x){return x.id===selectedId});
+  if (t) { t[field] = val; if(field==='done'){document.getElementById('detail-done-label').textContent=val?'已完成':'未完成'} saveTodos(); render(); }
+}
+
+function switchFilter(filter, btn) {
+  currentFilter = filter;
+  document.querySelectorAll('.tab').forEach(function(t){t.classList.remove('active')});
+  if (btn) btn.classList.add('active');
+  else document.querySelector('.tab[data-filter="'+filter+'"]')?.classList.add('active');
+  renderList();
+}
+
+var deleteTarget = null;
+function promptDelete(id) { deleteTarget = id; var t=TODOS.find(function(x){return x.id===id}); document.getElementById('delete-title').textContent=escHtml(t?t.title:''); document.getElementById('delete-modal').classList.remove('hidden'); }
+function closeDeleteModal() { document.getElementById('delete-modal').classList.add('hidden'); deleteTarget=null; }
+function confirmDelete() { promptDelete(selectedId); }
+function doDelete() {
+  if (!deleteTarget) return;
+  TODOS = TODOS.filter(function(x){return x.id!==deleteTarget});
+  if (selectedId === deleteTarget) selectedId = null;
+  saveTodos(); render(); closeDeleteModal();
+  showToast('info','已删除','待办事项已移除');
+}
+
+function switchView(view) {
+  document.querySelectorAll('.sidebar .icon-btn').forEach(function(b){b.classList.remove('active')});
+  if (view === 'chat') {
+    document.getElementById('chat-panel').style.display = 'flex';
+    document.getElementById('empty-state').style.display = 'none';
+    document.getElementById('detail-view').style.display = 'none';
+    document.querySelector('.sidebar .icon-btn:nth-child(2)').classList.add('active');
+  } else {
+    document.getElementById('chat-panel').style.display = 'none';
+    if (selectedId) renderDetail(); else document.getElementById('empty-state').style.display='flex';
+    document.querySelector('.sidebar .icon-btn:nth-child(1)').classList.add('active');
+  }
+}
+
+// ========== AI Chat ==========
+function addChatMessage(role, content) {
+  var el = document.getElementById('chat-messages');
+  var div = document.createElement('div');
+  div.className = 'chat-msg ' + role;
+  div.innerHTML = content + '<div class="msg-meta">' + new Date().toLocaleTimeString() + '</div>';
+  el.appendChild(div);
+  el.scrollTop = el.scrollHeight;
+  chatHistory.push({role:role, content:content});
+}
+
+function sendMessage() {
+  var input = document.getElementById('chat-input');
+  var text = input.value.trim();
+  if (!text) return;
+  input.value = '';
+  addChatMessage('user', escHtml(text));
+  document.getElementById('chat-send').disabled = true;
+  processAI(text);
+}
+
+function processAI(userInput) {
+  // 模拟DeepSeek v4 Flash解析
+  setTimeout(function() {
+    var result = parseIntent(userInput);
+    if (result.error) {
+      addChatMessage('system', result.error);
+      document.getElementById('chat-send').disabled = false;
+      return;
+    }
+    var response = '';
+    if (result.action === 'create') {
+      var todo = { id:'t'+nextId++, title:result.title, time:result.time||'', priority:result.priority||'medium',
+        importance:result.importance||false, done:false, note:result.note||'', created_at:new Date().toISOString().slice(0,16).replace('T',' ') };
+      TODOS.push(todo);
+      saveTodos(); render();
+      response = '✅ 已添加：<strong>' + escHtml(todo.title) + '</strong>';
+      if (todo.time) response += '（' + todo.time + '）';
+      if (todo.importance) response += ' ⭐重要';
+      response += '<br>优先级：' + {high:'🔴高',medium:'🟡中',low:'🟢低'}[todo.priority];
+    } else if (result.action === 'update') {
+      var found = findTodo(result);
+      if (found) {
+        if (result.new_title) found.title = result.new_title;
+        if (result.time !== undefined) found.time = result.time;
+        if (result.priority) found.priority = result.priority;
+        if (result.importance !== undefined) found.importance = result.importance;
+        if (result.note !== undefined) found.note = result.note;
+        saveTodos(); render();
+        response = '✏️ 已更新：<strong>' + escHtml(found.title) + '</strong>';
+      } else {
+        response = '❌ 没找到匹配的待办，请重新描述';
+      }
+    } else if (result.action === 'delete') {
+      var found = findTodo(result);
+      if (found) {
+        TODOS = TODOS.filter(function(x){return x.id!==found.id});
+        if (selectedId === found.id) selectedId = null;
+        saveTodos(); render();
+        response = '🗑️ 已删除：<strong>' + escHtml(found.title) + '</strong>';
+      } else {
+        response = '❌ 没找到匹配的待办';
+      }
+    } else if (result.action === 'query') {
+      var list = TODOS.filter(function(t){return !t.done});
+      if (list.length === 0) response = '📭 目前没有待办事项，轻松一下！';
+      else response = '📋 你有 ' + list.length + ' 项待办：<br>' +
+        list.map(function(t,i){return (i+1)+'. '+(t.importance?'⭐ ':'')+escHtml(t.title)+(t.time?'（'+t.time+'）':'')+' ['+{high:'🔴高',medium:'🟡中',low:'🟢低'}[t.priority]+']'}).join('<br>');
+    }
+    addChatMessage('assistant', response);
+    document.getElementById('chat-send').disabled = false;
+  }, 600);
+}
+
+function parseIntent(text) {
+  var t = text.trim();
+  // 删除
+  if (/删(除|掉)|移除|清除/.test(t)) {
+    var keyword = t.replace(/请|把|帮我|将|那个|这个|第|个|的|删(除|掉)|移除|清除/g,'').trim();
+    if (!keyword) return {action:'delete', title:''};
+    var items = TODOS.filter(function(x){return !x.done});
+    var idx = parseInt(keyword);
+    if (!isNaN(idx) && idx > 0 && idx <= items.length) {
+      return {action:'delete', title:items[idx-1].title, targetIdx:idx-1};
+    }
+    var found = fuzzyFind(keyword);
+    if (found) return {action:'delete', title:found.title};
+    return {error:'❌ 没找到「'+keyword+'」，请更具体地描述'};
+  }
+  // 更新
+  if (/改(为|成|一下)?|修改|更新|调整|重命名/.test(t)) {
+    var parts = t.replace(/请|把|帮我|将/g,'').split(/改(为|成)?|修改为|调整(为)?|更新/);
+    var keyword = parts[0].replace(/(改|修改|调整|更新)/g,'').trim();
+    var newVal = parts.length>1?parts[1].trim():'';
+    var found = fuzzyFind(keyword);
+    if (!found) return {error:'❌ 没找到「'+keyword+'」，请更具体地描述'};
+    var result = {action:'update', title:found.title};
+    if (newVal) result.new_title = newVal.replace(/^成|^为|^一下/g,'').trim();
+    // 时间
+    var timeMatch = t.match(/(\d{1,2})[:：](\d{2})|明天|今天|后天|\d+月\d+日/g);
+    if (timeMatch) {
+      var now = new Date();
+      if (/明天/.test(t)) { now.setDate(now.getDate()+1); result.time = now.toISOString().slice(0,10); }
+      else if (/今天/.test(t)) { result.time = now.toISOString().slice(0,10); }
+      else if (/后天/.test(t)) { now.setDate(now.getDate()+2); result.time = now.toISOString().slice(0,10); }
+    }
+    return result;
+  }
+  // 查询
+  if (/什么|哪些|查看|展示|列出|显示|有(什么|哪些)|今天(的)?安排/.test(t)) {
+    return {action:'query'};
+  }
+  // 创建（默认）
+  var title = t.replace(/请|帮我|添加|新增|创建|增加|记(录)?一下|安排|提醒/g,'').trim();
+  // 提取时间
+  var time = '';
+  var timeMatch = t.match(/(明天|今天|后天|周[一二三四五六日]?|\d{1,2}月\d{1,2}日?)\s*([上下]午)?\s*(\d{1,2})[:：](\d{2})?/);
+  if (timeMatch) {
+    time = timeMatch[0];
+  } else if (/明天/.test(t)) {
+    var d = new Date(); d.setDate(d.getDate()+1); time = d.toISOString().slice(0,10);
+  } else if (/今天/.test(t)) {
+    time = new Date().toISOString().slice(0,10);
+  }
+  title = title.replace(/(明天|今天|后天|周[一二三四五六日]|\d{1,2}月\d{1,2}日|\d{1,2}[:：]\d{2}|[上下]午)/g,'').trim();
+  var priority = /紧急|重要|高优先级|加急|尽快/.test(t) ? 'high' : (/一般|普通|低/.test(t) ? 'low' : 'medium');
+  var importance = /重要|紧急|必须/.test(t);
+  var note = '';
+
+  if (!title) return {error:'🤔 没理解你的意思，试试说「明天下午3点开会」'};
+  return {action:'create', title:title, time:time||'', priority:priority, importance:importance, note:note};
+}
+
+function fuzzyFind(keyword) {
+  if (!keyword) return null;
+  var items = TODOS.filter(function(x){return !x.done});
+  for (var i = 0; i < items.length; i++) {
+    if (items[i].title.indexOf(keyword) !== -1) return items[i];
+  }
+  // 序号匹配
+  var idx = parseInt(keyword);
+  if (!isNaN(idx) && idx > 0 && idx <= items.length) return items[idx-1];
+  return null;
+}
+
+function findTodo(result) {
+  if (result.targetIdx !== undefined) {
+    var items = TODOS.filter(function(x){return !x.done});
+    return items[result.targetIdx];
+  }
+  return fuzzyFind(result.title);
+}
+
+function clearChat() {
+  document.getElementById('chat-messages').innerHTML =
+    '<div class="chat-msg assistant">你好！我是你的待办助手。告诉我你想做什么...</div>';
+  chatHistory = [];
+}
+
+// ========== Toast ==========
+function showToast(type, title, msg) {
+  var c = document.getElementById('toast-container');
+  var icons = {success:'✅',error:'❌',info:'ℹ️'};
+  var t = document.createElement('div');
+  t.className = 'toast toast-' + type;
+  t.innerHTML = '<span>' + (icons[type]||'') + '</span><div><strong>' + title + '</strong><br>' + msg + '</div>';
+  c.appendChild(t);
+  setTimeout(function(){t.style.opacity='0';t.style.transition='opacity 0.3s';setTimeout(function(){t.remove()},300)},2500);
+}
+
+function escHtml(s) { if (!s) return ''; return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+// ========== Init ==========
+render();
+</script>
+</body>
+</html>
