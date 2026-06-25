@@ -227,7 +227,93 @@ Vue 3 B端 → Element Plus（#409EFF）
 
 ---
 
-## 常见陷阱
+## 大规模原型并行工作流（30+页面）
+
+当PRD包含30+页面、5+功能域时，使用此增强流程可显著提速（已验证36页/7域原型在30分钟内完成）。
+
+### 架构选型：纯原生JS SPA
+
+```
+引擎：原生JS（零CDN/零React依赖，双击可运行）
+路由：window.location.hash
+交互：data-action 事件委托（全局document监听）
+数据：data/mock-data.js 统一数据池
+页面注册：registerRender(pageId, fn) 模式
+```
+
+**为什么选原生JS而非React/Babel：**
+- WSL/headless下Babel standalone 3MB编译常超时导致空白页
+- 单HTML文件Hash路由支持直接 `file://` 打开
+- 纯JS更易由多个开发者并行生成
+
+### 三阶段流程
+
+**Phase A · 建基（5min）**
+1. 创建目录结构
+2. 设计 design-tokens.css（Ant Design Token）
+3. 编写 data/mock-data.js（统一数据池）
+4. 编写 index.html（壳：侧栏导航 + 路由系统 + 事件委托 + modal/drawer/toast系统）
+   - 侧栏每个菜单项 `data-page="DS-Xxx-001"`
+   - 全局事件委托：`data-action` 按钮 / `.nav-item[data-page]` / `tr[data-id][data-page]` / 遮罩层关闭
+   - 工具函数：`registerRender()` / `tag()` / `pagination()` / `emptyState()` / `openModal()` / `showToast()`
+
+**Phase B · 并行实现（各域10-15min）**
+```
+分工：每个功能域一个独立JS文件（pages-{domain}.js）
+每个页面通过 registerRender('pageId', fn) 注册
+渲染函数返回HTML字符串，使用MOCK数据和全局工具函数
+```
+
+每个域JS的注册模式：
+```javascript
+registerRender('DS-Agg-001', function() {
+  var data = MOCK.aggregation.interfaces;
+  var html = '<div class="card">'
+    + '<div class="card-header"><h3>接口管理</h3>'
+    + '<button class="btn btn-primary" data-action="new">新建</button></div>'
+    + '<div class="card-body">'
+    + '<table class="data-table"><tr><th>名称</th><th>状态</th><th>操作</th></tr>'
+    + data.map(function(item) {
+        return '<tr data-id="' + item.id + '" data-page="DS-Agg-001">'
+          + '<td>' + item.name + '</td>'
+          + '<td>' + tag(item.status) + '</td>'
+          + '<td class="col-actions"><a data-action="edit">编辑</a><a data-action="delete">删除</a></td>'
+        + '</tr>';
+      }).join('')
+    + '</table></div></div>';
+  return html;
+});
+```
+
+**Phase C · 组装验证（5min）**
+```bash
+# 1. 语法验证（每个域文件必须通过）
+for f in pages-*.js; do node --check "$f" || echo "FAILED: $f"; done
+
+# 2. 交叉比对：所有data-action是否有对应handler
+grep -noP 'data-action="([^"]*)"' pages-*.js | sed 's/.*data-action="//;s/"//' | sort -u > /tmp/actions.txt
+grep -noP 'window\.on[A-Za-z][A-Za-z0-9]*\s*=' pages-*.js index.html | sed 's/.*window\.//;s/\s*=.*//' | sort -u > /tmp/handlers.txt
+for a in $(cat /tmp/actions.txt); do
+  cap="on$(echo $a | sed 's/^\(.\)/\U\1/')"
+  low="on$a"
+  if ! grep -q -e "$cap" -e "$low" /tmp/handlers.txt 2>/dev/null; then
+    echo "❌ 无handler: $a"
+  fi
+done
+
+# 3. 启动HTTP服务 + headless截图验证
+python3 -m http.server 8899 &
+chromium-browser --headless --no-sandbox --disable-gpu \
+  --screenshot=./screenshot-xxx.png --window-size=1440,900 \
+  "http://localhost:8899/index.html#DS-Agg-001"
+
+# 4. 截图健康检查
+ls -la screenshot-*.png
+# 正常：100-200KB，且不同页面大小差异明显
+# 异常：全部等大且18-20KB → 渲染失败
+```
+
+### 常见陷阱补充
 
 | # | 陷阱 | 预防 |
 |---|------|------|
@@ -237,3 +323,5 @@ Vue 3 B端 → Element Plus（#409EFF）
 | 4 | JS插入破坏函数边界 | 修改后运行 node --check |
 | 5 | 「多种入库方式」只做了两三种 | 枚举值必须从PRD列全 |
 | 6 | 底部Tab随页面滚动 | Tab在滚动容器外，flex-shrink:0 |
+| 7 | 并行子Agent handler名大小写不一致 | 事件委托加fallback：`window[驼峰] \|\| window[原样]` |
+| 8 | Headless截图全等大18KB | 服务器未响应或JS语法错误，先curl验证服务器连通性 |
