@@ -1,12 +1,21 @@
 #!/usr/bin/env python3
-"""
-PRD → 原型质量门禁 · 自动化验收脚本
+"""PRD → 原型质量门禁 · 自动化验收脚本
 用途：交付前自动扫描原型文件，检查功能完整性、设计一致性、状态覆盖
 通过标准：≥90%
 安装：复制到 prototype/scripts/ 目录，python3 verify-prototype.py 直接运行
 """
 import os, re, sys
 from collections import OrderedDict
+
+# Windows GBK 编码兼容
+if sys.platform == 'win32' and hasattr(sys.stdout, 'reconfigure'):
+    try:
+        sys.stdout.reconfigure(encoding='utf-8')
+    except Exception:
+        pass
+elif sys.platform == 'win32':
+    import io
+    sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8')
 
 PROTOTYPE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 

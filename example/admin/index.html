@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head><meta charset="UTF-8"><title>订单管理 - 原型示例</title>
+<link rel="stylesheet" href="design-tokens.css">
+<style>
+*{margin:0;padding:0;box-sizing:border-box;font-family:-apple-system,'PingFang SC','Microsoft YaHei',sans-serif}
+body{background:var(--brand-bg);color:var(--text-primary);min-height:100vh}
+.sidebar{position:fixed;left:0;top:0;width:220px;height:100vh;background:var(--sidebar-bg);color:#fff;padding:20px 0}
+.sidebar h2{padding:0 20px;font-size:16px;margin-bottom:24px;color:rgba(255,255,255,0.85)}
+.sidebar a{display:block;padding:10px 20px;color:rgba(255,255,255,0.65);text-decoration:none;font-size:14px}
+.sidebar a.active{background:rgba(22,119,255,0.2);color:#fff;border-right:3px solid var(--brand-primary)}
+.main{margin-left:220px;padding:24px}
+.header{display:flex;justify-content:space-between;align-items:center;margin-bottom:24px}
+.header h1{font-size:20px}
+.search-bar{display:flex;gap:12px;margin-bottom:16px;flex-wrap:wrap}
+.search-bar input,.search-bar select{padding:6px 12px;border:1px solid var(--border);border-radius:var(--radius);font-size:14px}
+.search-bar .btn{padding:6px 16px;border:none;border-radius:var(--radius);cursor:pointer;font-size:14px}
+.btn-primary{background:var(--brand-primary);color:#fff}
+.btn-outline{background:#fff;color:var(--text-primary);border:1px solid var(--border)}
+table{width:100%;border-collapse:collapse;background:#fff;border-radius:var(--radius);overflow:hidden}
+th{background:#FAFAFA;padding:9px 16px;text-align:left;font-size:13px;font-weight:500;color:var(--text-secondary);border-bottom:1px solid var(--border)}
+td{padding:9px 16px;font-size:14px;border-bottom:1px solid #F0F0F0}
+tr:hover td{background:#F5F5F5}
+.status{padding:2px 8px;border-radius:4px;font-size:12px;font-weight:500}
+.status-pending{background:#FFF7E6;color:#D46B08}
+.status-approved{background:#F6FFED;color:#389E0D}
+.status-rejected{background:#FFF1F0;color:#CF1322}
+.pagination{display:flex;justify-content:flex-end;align-items:center;gap:8px;margin-top:16px;font-size:13px;color:var(--text-secondary)}
+.pagination button{padding:4px 12px;border:1px solid var(--border);border-radius:4px;background:#fff;cursor:pointer}
+.empty-state{text-align:center;padding:80px 20px;color:var(--text-secondary)}
+.empty-state h3{font-size:16px;margin-bottom:8px;color:var(--text-primary)}
+.loading-skeleton td{height:24px;background:linear-gradient(90deg,#f0f0f0 25%,#e0e0e0 50%,#f0f0f0 75%);background-size:200% 100%;animation:shimmer 1.5s infinite}
+@keyframes shimmer{0%{background-position:200% 0}100%{background-position:-200% 0}}
+</style></head>
+<body>
+<div class="sidebar">
+  <h2>📊 数据看板</h2>
+  <a href="#" class="active">📋 订单管理</a>
+  <a href="#">📦 商品管理</a>
+  <a href="#">👥 用户管理</a>
+  <a href="#">⚙️ 系统设置</a>
+</div>
+<div class="main" id="app">
+  <div class="header">
+    <h1>📋 订单列表</h1>
+    <div>
+      <button class="btn btn-primary" onclick="showModal('modalReview')">审核订单</button>
+      <button class="btn btn-outline" data-action="exportOrder">导出Excel</button>
+    </div>
+  </div>
+  <div class="search-bar">
+    <input placeholder="订单号" id="searchOrderNo">
+    <input placeholder="买家手机号" id="searchPhone">
+    <select id="searchStatus">
+      <option value="">全部状态</option>
+      <option value="pending">待审核</option>
+      <option value="approved">已通过</option>
+      <option value="rejected">已驳回</option>
+    </select>
+    <button class="btn btn-primary" data-action="search">查询</button>
+    <button class="btn btn-outline" data-action="reset">重置</button>
+  </div>
+  <table id="orderTable">
+    <thead>
+      <tr>
+        <th style="width:40px"><input type="checkbox" id="selectAll"></th>
+        <th>订单号</th>
+        <th>买家</th>
+        <th>金额</th>
+        <th>状态</th>
+        <th>下单时间</th>
+        <th>操作</th>
+      </tr>
+    </thead>
+    <tbody id="orderBody"></tbody>
+  </table>
+  <div id="emptyState" class="empty-state" style="display:none">
+    <h3>暂无订单数据</h3>
+    <p>当前筛选条件下没有找到订单</p>
+  </div>
+  <div id="loadingState" class="empty-state" style="display:none">
+    <h3>⏳ 加载中...</h3>
+  </div>
+  <div class="pagination">
+    <span>共 <span id="totalCount">0</span> 条</span>
+    <button id="prevPage" data-action="prevPage">上一页</button>
+    <span id="pageInfo">1/1</span>
+    <button id="nextPage" data-action="nextPage">下一页</button>
+  </div>
+</div>
+
+<!-- 审核弹窗 -->
+<div id="modalReview" class="modal-overlay" style="display:none" onclick="if(event.target===this)closeModal('modalReview')">
+  <div class="modal" style="background:#fff;margin:10% auto;max-width:480px;border-radius:8px;padding:24px;box-shadow:0 6px 30px rgba(0,0,0,0.12)">
+    <h3 style="margin-bottom:16px">订单审核</h3>
+    <div style="margin-bottom:16px"><label style="display:block;margin-bottom:6px;font-size:14px;color:#595959">审核结果</label>
+      <label><input type="radio" name="reviewAction" value="approve" checked> 通过</label>
+      <label style="margin-left:16px"><input type="radio" name="reviewAction" value="reject"> 驳回</label>
+    </div>
+    <div style="margin-bottom:20px"><label style="display:block;margin-bottom:6px;font-size:14px;color:#595959">备注</label>
+      <textarea id="reviewRemark" style="width:100%;padding:8px;border:1px solid #d9d9d9;border-radius:6px;min-height:80px;font-size:14px" placeholder="请输入审核意见（驳回时必填）"></textarea>
+    </div>
+    <div style="text-align:right;display:flex;gap:8px;justify-content:flex-end">
+      <button class="btn btn-outline" onclick="closeModal('modalReview')">取消</button>
+      <button class="btn btn-primary" onclick="submitReview()">提交</button>
+    </div>
+  </div>
+</div>
+
+<script src="data/mock-data.js"></script>
+<script>
+function renderOrders(list) {
+  var tbody = document.getElementById('orderBody');
+  var empty = document.getElementById('emptyState');
+  if (!list || list.length === 0) {
+    tbody.innerHTML = '';
+    empty.style.display = 'block';
+    document.getElementById('totalCount').textContent = '0';
+    return;
+  }
+  empty.style.display = 'none';
+  tbody.innerHTML = list.map(function(o) {
+    var statusLabel = {pending:'待审核',approved:'已通过',rejected:'已驳回'}[o.status] || o.status;
+    var statusClass = 'status-' + o.status;
+    return '<tr><td><input type="checkbox" class="order-check" value="'+o.id+'"></td>' +
+      '<td><a href="#" onclick="showOrderDetail(\''+o.id+'\')" style="color:#1677ff">'+o.order_no+'</a></td>' +
+      '<td>'+o.customer+'</td>' +
+      '<td>¥'+o.amount.toFixed(2)+'</td>' +
+      '<td><span class="status '+statusClass+'">'+statusLabel+'</span></td>' +
+      '<td>'+o.created_at+'</td>' +
+      '<td><button class="btn btn-outline" style="padding:2px 12px;font-size:12px" onclick="showModal(\'modalReview\')">审核</button></td></tr>';
+  }).join('');
+  document.getElementById('totalCount').textContent = list.length;
+  document.getElementById('pageInfo').textContent = '1/1';
+}
+
+// 数据加载
+function loadData() {
+  var loading = document.getElementById('loadingState');
+  loading.style.display = 'block';
+  setTimeout(function() {
+    loading.style.display = 'none';
+    renderOrders(MOCK.orders.list);
+  }, 500);
+}
+
+// 弹窗控制
+function showModal(id) { document.getElementById(id).style.display = 'block'; }
+function closeModal(id) { document.getElementById(id).style.display = 'none'; }
+function showOrderDetail(id) { showToast('查看订单 ' + id); }
+function submitReview() { closeModal('modalReview'); showToast('审核提交成功'); }
+
+// Toast
+function showToast(msg) {
+  var t = document.createElement('div');
+  t.textContent = msg;
+  t.style.cssText = 'position:fixed;top:24px;left:50%;transform:translateX(-50%);background:#fff;color:#333;padding:12px 24px;border-radius:8px;box-shadow:0 4px 12px rgba(0,0,0,0.15);z-index:9999';
+  document.body.appendChild(t);
+  setTimeout(function(){t.remove()}, 2000);
+}
+
+// 事件委托
+document.addEventListener('click', function(e) {
+  var el = e.target.closest('[data-action]');
+  if (!el) return;
+  switch(el.dataset.action) {
+    case 'exportOrder': showToast('正在导出Excel...'); break;
+    case 'search': showToast('搜索中...'); break;
+    case 'reset': renderOrders(MOCK.orders.list); break;
+    case 'nextPage': showToast('下一页'); break;
+    case 'prevPage': showToast('上一页'); break;
+  }
+});
+
+loadData();
+</script>
+</body>
+</html>
