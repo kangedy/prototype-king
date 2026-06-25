@@ -8,7 +8,7 @@
 <style>
 /* ========== Reset & Base ========== */
 *{margin:0;padding:0;box-sizing:border-box}
-body{font-family:-apple-system,'PingFang SC','Microsoft YaHei',sans-serif;
+body{font-family:-apple-system,'Helvetica Neue','PingFang SC','SF Pro Display',sans-serif;
      background:var(--bg);color:var(--text);min-height:100vh;display:flex}
 
 /* ========== Sidebar ========== */
@@ -23,15 +23,15 @@ body{font-family:-apple-system,'PingFang SC','Microsoft YaHei',sans-serif;
 
 /* ========== Main ========== */
 .main{flex:1;display:flex;flex-direction:column;min-height:100vh}
-.topbar{display:flex;justify-content:space-between;align-items:center;padding:16px 24px;background:#fff;
-        border-bottom:1px solid var(--border)}
+.topbar{display:flex;justify-content:space-between;align-items:center;padding:16px 32px;background:rgba(255,255,255,0.85);-webkit-backdrop-filter:blur(20px);backdrop-filter:blur(20px);
+        border-bottom:1px solid rgba(0,0,0,0.06)}
 .topbar h1{font-size:18px;font-weight:600}
 .topbar .breadcrumb{font-size:13px;color:var(--text-secondary)}
 .content{padding:24px;flex:1}
 
 /* ========== Stats Cards ========== */
 .stats{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:24px}
-.stat-card{background:#fff;border-radius:var(--radius);padding:20px;box-shadow:0 1px 3px rgba(0,0,0,0.04);border:1px solid var(--border)}
+.stat-card{background:#fff;border-radius:12px;padding:20px;box-shadow:0 2px 12px rgba(0,0,0,0.04);border:none}
 .stat-card .label{font-size:13px;color:var(--text-secondary);margin-bottom:4px}
 .stat-card .value{font-size:24px;font-weight:700;color:var(--text)}
 .stat-card .trend{font-size:12px;margin-top:4px}
@@ -39,7 +39,7 @@ body{font-family:-apple-system,'PingFang SC','Microsoft YaHei',sans-serif;
 .stat-card .trend.down{color:var(--danger)}
 
 /* ========== Card ========== */
-.card{background:#fff;border-radius:var(--radius);box-shadow:0 1px 3px rgba(0,0,0,0.04);border:1px solid var(--border);overflow:hidden}
+.card{background:#fff;border-radius:12px;box-shadow:0 2px 12px rgba(0,0,0,0.04);border:none;overflow:hidden}
 .card-header{display:flex;justify-content:space-between;align-items:center;padding:16px 20px;border-bottom:1px solid var(--border)}
 .card-header h2{font-size:15px;font-weight:600}
 .card-body{padding:0}

@@ -1,9 +1,17 @@
 :root {
-  --brand-primary: #1677FF;
-  --brand-bg: #F5F7FA;
-  --sidebar-bg: #001529;
-  --text-primary: #1D1D1F;
-  --text-secondary: #595959;
-  --border: #E5E6EB;
-  --radius: 6px;
+  --primary: #007AFF;
+  --primary-hover: #4096FF;
+  --bg: #F5F5F7;
+  --text: #1D1D1F;
+  --text-secondary: #86868B;
+  --sidebar-bg: #1C1C1E;
+  --sidebar-text: rgba(255,255,255,0.6);
+  --sidebar-active-bg: rgba(0,122,255,0.25);
+  --border: #D2D2D7;
+  --success: #30D158;
+  --danger: #FF453A;
+  --radius: 10px;
+  --table-header: #F5F5F7;
+  --row-hover: #F5F5F7;
+  --card-shadow: 0 2px 12px rgba(0,0,0,0.04);
 }
